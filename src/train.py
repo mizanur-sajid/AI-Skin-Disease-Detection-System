@@ -1,24 +1,15 @@
-try:
-    from google.colab import drive
-    drive.mount('/content/drive')
-    print('Google Drive mounted successfully!')
-except ImportError:
-    print('Not running in Google Colab, skipping drive mount.')
-
-
 import os
 import argparse
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.utils.class_weight import compute_class_weight
 
 from data_loader import SkinLesionDataLoader
 from model import build_efficientnetv2_model, compile_model
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.utils.class_weight import compute_class_weight
-import numpy as np
 
 
 def train(data_dir, csv_path, epochs, batch_size, model_save_path):
@@ -78,25 +69,28 @@ def train(data_dir, csv_path, epochs, batch_size, model_save_path):
 
 
 if __name__ == '__main__':
-    # Configuration (Adjust paths if running from a different root in Colab)
-    DATA_DIR = '../data/images' if os.path.exists('../data/images') else 'data/images'
-    CSV_PATH = '../data/HAM10000_metadata.csv' if os.path.exists('../data/HAM10000_metadata.csv') else 'data/HAM10000_metadata.csv'
-    RESULTS_DIR = '../results' if os.path.exists('../data') else 'results'
-    MODEL_SAVE = '../models/best_model.h5' if os.path.exists('../models') else 'models/best_model.h5'
+    parser = argparse.ArgumentParser(description='Train Skin Lesion Detection Model')
+    parser.add_argument('--data_dir', type=str, default='data/images', help='Path to images directory')
+    parser.add_argument('--csv_path', type=str, default='data/HAM10000_metadata.csv', help='Path to metadata CSV')
+    parser.add_argument('--results_dir', type=str, default='results', help='Path to save results')
+    parser.add_argument('--model_save', type=str, default='models/best_model.h5', help='Path to save the best model')
+    parser.add_argument('--epochs', type=int, default=20, help='Number of epochs to train')
+    parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training')
     
-    os.makedirs(RESULTS_DIR, exist_ok=True)
+    args = parser.parse_args()
+    
+    os.makedirs(args.results_dir, exist_ok=True)
+    os.makedirs(os.path.dirname(args.model_save), exist_ok=True)
     
     # Run Training
     history, model, val_ds, loader = train(
-        data_dir=DATA_DIR,
-        csv_path=CSV_PATH,
-        epochs=5, # Reduced for quick testing, change to 20+
-        batch_size=32,
-        model_save_path=MODEL_SAVE
+        data_dir=args.data_dir,
+        csv_path=args.csv_path,
+        epochs=args.epochs,
+        batch_size=args.batch_size,
+        model_save_path=args.model_save
     )
 
-
-if __name__ == '__main__':
     # 1. Plot & Save Training History
     plt.figure(figsize=(12, 4))
     
@@ -116,10 +110,9 @@ if __name__ == '__main__':
     plt.xlabel('Epoch')
     plt.legend(loc='upper right')
     
-    history_path = os.path.join(RESULTS_DIR, 'training_history.png')
+    history_path = os.path.join(args.results_dir, 'training_history.png')
     plt.savefig(history_path)
     print(f"Saved training history plot to {history_path}")
-    plt.show()
 
     # 2. Evaluate and save Confusion Matrix
     print("Evaluating on validation set...")
@@ -133,7 +126,7 @@ if __name__ == '__main__':
     
     # Classification Report
     report = classification_report(y_true, y_pred, target_names=loader.classes)
-    report_path = os.path.join(RESULTS_DIR, 'classification_report.txt')
+    report_path = os.path.join(args.results_dir, 'classification_report.txt')
     with open(report_path, 'w') as f:
         f.write(report)
     print(f"Saved classification report to {report_path}")
@@ -147,9 +140,8 @@ if __name__ == '__main__':
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
     
-    cm_path = os.path.join(RESULTS_DIR, 'confusion_matrix.png')
+    cm_path = os.path.join(args.results_dir, 'confusion_matrix.png')
     plt.savefig(cm_path)
     print(f"Saved confusion matrix plot to {cm_path}")
-    plt.show()
 
 

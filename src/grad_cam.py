@@ -1,11 +1,3 @@
-try:
-    from google.colab import drive
-    drive.mount('/content/drive')
-    print('Google Drive mounted successfully!')
-except ImportError:
-    print('Not running in Google Colab, skipping drive mount.')
-
-
 import numpy as np
 import tensorflow as tf
 import cv2
@@ -134,7 +126,6 @@ if __name__ == '__main__':
             save_path = '../results/gradcam_showcase.png'
             plt.savefig(save_path)
             print(f"\nSaved collage to {save_path}")
-            plt.show()
         else:
             print("No images found to generate collage.")
 

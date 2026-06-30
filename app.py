@@ -1,25 +1,15 @@
-try:
-    from google.colab import drive
-    drive.mount('/content/drive')
-    print('Google Drive mounted successfully!')
-except ImportError:
-    print('Not running in Google Colab, skipping drive mount.')
-
-
 import os
 import io
+import sys
 import base64
 import numpy as np
 import tensorflow as tf
+import cv2
 from PIL import Image
 from flask import Flask, render_template, request, jsonify
 
 # Add src to path if running from root
-import sys
-
-
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
-
 
 from grad_cam import GradCAM
 
@@ -73,10 +63,12 @@ def encode_image_to_base64(img_array):
     return img_str
 
 
+@app.route('/')
 def index():
     return render_template('index.html')
 
 
+@app.route('/predict', methods=['POST'])
 def predict():
     try:
         if 'image' not in request.files:
@@ -87,8 +79,7 @@ def predict():
             return jsonify({'error': 'No selected file'})
             
         img_bytes = file.read()
-        
-        import cv2 # ensure cv2 is available here
+
         model = load_cached_model()
         if model is None:
             return jsonify({'error': 'Model not loaded. Server error.'})
@@ -129,23 +120,5 @@ if __name__ == '__main__':
     # Initialize model on startup
     load_cached_model()
     
-    # Optional: Web Tunneling for Colab
-    try:
-        import getpass
-        from pyngrok import ngrok
-        from google.colab import userdata
-        
-        print("Enter your ngrok authtoken (get it from https://dashboard.ngrok.com/get-started/your-authtoken):")
-        # In Colab you can also use userdata.get('NGROK_AUTH_TOKEN') if stored in secrets
-        authtoken = getpass.getpass('Ngrok Authtoken: ')
-        if authtoken:
-            ngrok.set_auth_token(authtoken)
-            public_url = ngrok.connect(5000).public_url
-            print(f'\n!!! SUCCESS !!!\nYour web app is live at: {public_url}\n')
-    except ImportError:
-        pass # Not running pyngrok
-        
     # Run the app locally
-    app.run(port=5000)
-
-
+    app.run(port=5000, debug=True)
