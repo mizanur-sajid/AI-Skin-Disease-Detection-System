@@ -7,3 +7,6 @@ matplotlib==3.8.3
 scikit-learn==1.4.1.post1
 opencv-python==4.9.0.80
 werkzeug==3.0.1
+
+pyngrok
+scikit-learn
