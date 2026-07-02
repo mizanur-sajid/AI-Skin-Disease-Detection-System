@@ -3,76 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Skin Disease Diagnosis System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>DermAI Diagnostix — AI Skin Disease Detection</title>
+    <meta name="description" content="Upload a skin lesion image and receive an instant AI-powered diagnosis with Grad-CAM explainability heatmaps. Built with EfficientNetV2 deep learning.">
+    <meta property="og:title" content="DermAI Diagnostix — AI Skin Disease Detection">
+    <meta property="og:description" content="Advanced CNN-based skin lesion analysis with Grad-CAM explainability.">
+    <meta property="og:type" content="website">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="app-container">
-        <header class="app-header">
-            <div class="logo">
-                <i class="fa-solid fa-notes-medical"></i>
-                <h1>DermAI <span>Diagnostix</span></h1>
-            </div>
-            <p class="subtitle">Advanced CNN-based Skin Lesion Analysis</p>
-        </header>
 
+    <!-- Animated Background Mesh -->
+    <div class="bg-mesh" aria-hidden="true"></div>
+
+    <!-- SVG Defs for Gauge Gradient (hidden) -->
+    <svg width="0" height="0" aria-hidden="true">
+        <defs>
+            <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#06b6d4" />
+                <stop offset="100%" stop-color="#22d3ee" />
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <div class="app-shell">
+
+        <!-- Navbar -->
+        <nav class="navbar" id="navbar">
+            <a class="nav-brand" href="/">
+                <div class="nav-brand-icon">
+                    <i class="fa-solid fa-dna"></i>
+                </div>
+                <span class="nav-brand-text">Derm<span>AI</span> Diagnostix</span>
+            </a>
+            <div class="nav-status">
+                <span class="status-dot"></span>
+                <span>Model Ready</span>
+            </div>
+        </nav>
+
+        <!-- Hero -->
+        <section class="hero">
+            <h1>Intelligent <span class="gradient-text">Skin Lesion</span> Analysis</h1>
+            <p>Upload a dermatoscopic image and our EfficientNetV2 model will classify it across 7 disease categories with Grad-CAM visual explanations.</p>
+        </section>
+
+        <!-- Main Content -->
         <main class="main-content">
-            <section class="upload-section">
-                <div class="upload-card" id="drop-area">
+
+            <!-- Upload Panel -->
+            <section class="upload-panel">
+                <div class="glass-card upload-zone" id="drop-area">
                     <input type="file" id="file-input" accept="image/*" hidden>
-                    <div class="upload-content">
-                        <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+
+                    <div class="upload-content" id="upload-content">
+                        <div class="upload-icon-wrapper">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                        </div>
                         <h3>Upload Lesion Image</h3>
                         <p>Drag & drop or click to browse</p>
+                        <span class="supported-formats">Supports JPG, PNG, WEBP</span>
                     </div>
-                    <img id="image-preview" src="#" alt="Preview" style="display: none;">
+
+                    <img id="image-preview" src="#" alt="Uploaded skin lesion preview">
+
+                    <div class="preview-overlay" id="preview-overlay">
+                        <span class="preview-filename" id="preview-filename">
+                            <i class="fa-solid fa-image"></i>
+                            <span>image.jpg</span>
+                        </span>
+                        <button class="change-image-btn" id="change-image-btn" type="button">Change</button>
+                    </div>
                 </div>
-                <button id="analyze-btn" class="primary-btn" disabled>
-                    <span>Analyze Image</span>
+
+                <button id="analyze-btn" class="analyze-btn" disabled>
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Analyze Image</span>
                 </button>
             </section>
 
-            <section class="results-section" id="results-section" style="display: none;">
-                <div class="result-card">
-                    <div class="result-header">
-                        <h2>Diagnosis Report</h2>
-                        <span class="status-badge">Complete</span>
-                    </div>
-                    
-                    <div class="prediction-details">
-                        <div class="detail-item">
-                            <span class="label">Predicted Class:</span>
-                            <span class="value highlight" id="pred-class">Melanoma</span>
+            <!-- Results Dashboard (hidden until analysis) -->
+            <section class="results-dashboard hidden" id="results-section">
+                <div class="results-grid">
+
+                    <!-- Diagnosis Card -->
+                    <div class="glass-card diagnosis-card" id="diagnosis-card">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <i class="fa-solid fa-stethoscope"></i>
+                                Diagnosis Report
+                            </h2>
+                            <span class="status-badge">
+                                <i class="fa-solid fa-circle"></i>
+                                Complete
+                            </span>
                         </div>
-                        <div class="detail-item">
-                            <span class="label">Confidence:</span>
-                            <div class="confidence-bar-container">
-                                <div class="confidence-bar" id="conf-bar" style="width: 0%;"></div>
+
+                        <div class="prediction-label">Predicted Condition</div>
+                        <div class="prediction-name" id="pred-class">—</div>
+
+                        <div class="gauge-section">
+                            <div class="confidence-gauge">
+                                <svg class="gauge-svg" viewBox="0 0 100 100">
+                                    <circle class="gauge-bg" cx="50" cy="50" r="45"></circle>
+                                    <circle class="gauge-fill" id="gauge-fill" cx="50" cy="50" r="45"></circle>
+                                </svg>
+                                <div class="gauge-text">
+                                    <span class="gauge-value" id="gauge-value">0%</span>
+                                    <span class="gauge-label">Confidence</span>
+                                </div>
                             </div>
-                            <span class="value" id="pred-conf">0%</span>
+                            <div class="gauge-details">
+                                <p id="confidence-text">The model's confidence level for this prediction.</p>
+                                <div id="risk-badge-container"></div>
+                            </div>
+                        </div>
+
+                        <div class="disease-info" id="disease-info">
+                            <h4><i class="fa-solid fa-info-circle"></i> About This Condition</h4>
+                            <p id="disease-description">Disease information will appear here after analysis.</p>
                         </div>
                     </div>
 
-                    <div class="explainability-box">
-                        <h3><i class="fa-solid fa-eye"></i> Grad-CAM Analysis</h3>
-                        <p class="explain-text">The heatmap highlights the visual features that contributed most to the model's prediction. Red areas indicate high importance.</p>
-                        <div class="heatmap-container">
-                            <img id="heatmap-img" src="" alt="Grad-CAM Heatmap">
+                    <!-- Explainability / Grad-CAM Card -->
+                    <div class="glass-card explainability-card" id="explainability-card">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <i class="fa-solid fa-eye"></i>
+                                Grad-CAM Analysis
+                            </h2>
+                        </div>
+
+                        <div class="comparison-tabs" id="comparison-tabs">
+                            <button class="tab-btn active" data-tab="heatmap">
+                                <i class="fa-solid fa-fire"></i> Heatmap
+                            </button>
+                            <button class="tab-btn" data-tab="original">
+                                <i class="fa-solid fa-image"></i> Original
+                            </button>
+                        </div>
+
+                        <div class="comparison-view" id="comparison-view">
+                            <img id="heatmap-img" src="" alt="Grad-CAM heatmap overlay">
+                            <img id="original-compare-img" class="hidden" src="" alt="Original uploaded image">
+                        </div>
+
+                        <div class="cam-explanation">
+                            <p>
+                                <i class="fa-solid fa-circle-info"></i>
+                                The heatmap highlights the visual regions that contributed most to the model's decision. <strong>Red/warm areas</strong> indicate high importance, while <strong>blue/cool areas</strong> had minimal influence.
+                            </p>
                         </div>
                     </div>
+
                 </div>
             </section>
 
-            <!-- Loading Overlay -->
-            <div class="loading-overlay" id="loading" style="display: none;">
-                <div class="spinner"></div>
-                <p>Running EfficientNetV2 inference...</p>
-            </div>
         </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p class="footer-disclaimer">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                This tool is for educational and research purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified dermatologist.
+            </p>
+            <p class="footer-credit">
+                Made with <span>❤</span> by <a href="#">Mizanur Sajid</a>
+            </p>
+        </footer>
+
     </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="dna-loader" aria-label="Loading">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+        <p class="loading-text">Running <span>EfficientNetV2</span> inference…</p>
+        <p class="loading-subtext">Generating Grad-CAM heatmap</p>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container" aria-live="polite"></div>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>

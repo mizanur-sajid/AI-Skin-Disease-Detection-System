@@ -17,7 +17,7 @@ from grad_cam import GradCAM
 app = Flask(__name__)
 
 # Constants
-MODEL_PATH = 'models/dummy_model.h5'
+MODEL_PATH = 'models/best_model.h5'
 CLASSES = ['Actinic keratoses (akiec)', 'Basal cell carcinoma (bcc)', 
            'Benign keratosis-like lesions (bkl)', 'Dermatofibroma (df)', 
            'Melanoma (mel)', 'Melanocytic nevi (nv)', 'Vascular lesions (vasc)']
